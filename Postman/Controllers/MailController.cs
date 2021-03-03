@@ -31,10 +31,12 @@ namespace Postman.Controllers
             {
                 await Task.WhenAll(_dbContext.Mails.OrderBy(x => x.Receiver).ToList().Select(x =>
                 {
-                    _client.DefaultRequestHeaders.Add("mail-message", x.Message);
-                    _logger.LogInformation($"Sending mail to {x.Receiver}");
-
-                    return _client.GetAsync($"http://localhost:{x.Address}");
+                    using (var requestMessage = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:{x.Address}"))
+                    {
+                        requestMessage.Headers.Add("mail-message", x.Message);
+                        _logger.LogInformation($"Sending mail to {x.Receiver}");
+                        return _client.SendAsync(requestMessage);
+                    }
                 }));
             }
             catch(HttpRequestException e) 
